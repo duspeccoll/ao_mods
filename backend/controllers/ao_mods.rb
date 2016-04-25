@@ -13,4 +13,14 @@ class ArchivesSpaceService < Sinatra::Base
     xml_response(ASpaceExport::serialize(ao_mods))
   end
 
+  Endpoint.get('/repositories/:repo_id/archival_objects/mods/:id.:fmt/metadata')
+    .description("Get metadata for a MODS export")
+    .params(["id", :id],
+            ["repo_id", :repo_id])
+    .permissions([:view_repository])
+    .returns([200, "The export metadata"]) \
+  do
+    json_response({"filename" => "#{ArchivalObject[params[:id]].component_id}_mods.xml".gsub(/\s+/, '_'), "mimetype" => "application/xml"})
+  end
+
 end
