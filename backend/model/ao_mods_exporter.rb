@@ -29,6 +29,10 @@ class MODSSerializer < ASpaceExport::Serializer
       xml.title mods.title
     }
 
+    xml.identifier(:type => 'local') {
+      xml.text mods.local_identifier
+    }
+
     xml.language {
       xml.languageTerm(:type => 'code') {
         xml.text mods.language_term
@@ -90,17 +94,20 @@ class MODSSerializer < ASpaceExport::Serializer
   end
 
 
+  # wrapped the namePart in an 'unless' so it wouldn't export empty tags
   def serialize_name(name, xml)
     atts = {:type => name['type']}
     atts[:authority] = name['source'] if name['source']
     xml.name(atts) {
       name['parts'].each do |part|
-        if part['type']
-          xml.namePart(:type => part['type']) {
-            xml.text part['content']
-          }
-        else
-          xml.namePart part['content']
+        unless part['content'].nil?
+          if part['type']
+            xml.namePart(:type => part['type']) {
+              xml.text part['content']
+            }
+          else
+            xml.namePart part['content']
+          end
         end
       end
       xml.role {

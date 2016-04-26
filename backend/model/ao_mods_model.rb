@@ -12,12 +12,17 @@ class MODSModel < ASpaceExport::ExportModel
   attr_accessor :type_of_resource
   attr_accessor :repository_note
 
+  # begin plugin
+  attr_accessor :local_identifier
+  # end plugin
+
   @archival_object_map = {
     :language => :language_term=,
     :extents => :handle_extent,
     :subjects => :handle_subjects,
     :linked_agents => :handle_agents,
     :notes => :handle_notes,
+    :component_id => :local_identifier=
   }
 
   @name_type_map = {
@@ -55,41 +60,6 @@ class MODSModel < ASpaceExport::ExportModel
 
     mods
   end
-
-
-  def self.from_digital_object(obj, opts = {})
-
-    mods = self.from_archival_object(obj)
-
-    if obj.respond_to? :digital_object_type
-      case obj.digital_object_type
-      when 'moving_image'
-        mods.type_of_resource = "moving image"
-      when 'sound_recording'
-        mods.type_of_resource = "sound recording"
-      when 'sound_recording_musical'
-        mods.type_of_resource = "sound recording-musical"
-      when 'sound_recording_nonmusical'
-        mods.type_of_resource = "sound recording-nonmusical"
-      when 'still_image'
-        mods.type_of_resource = "still image"
-      when 'text'
-        mods.type_of_resource = "text"
-      end
-    end
-
-    mods.apply_map(obj, @digital_object_map, opts)
-
-    mods
-  end
-
-
-  def self.from_digital_object_component(obj)
-    mods = self.from_archival_object(obj)
-
-    mods
-  end
-
 
   def self.name_type_map
     @name_type_map
@@ -216,25 +186,6 @@ class MODSModel < ASpaceExport::ExportModel
       parts << part unless part.empty?
     end
     parts
-  end
-
-
-  def handle_digital_origin(user_defined)
-    return unless user_defined
-    digital_origin = case user_defined['enum_2']
-    when 'born_digital'
-      "born digital"
-    when 'digitized_micro'
-      "digitized microfilm"
-    when 'digitized_other'
-      "digitized other analog"
-    when 'reformatted'
-      "reformatted digital"
-    else
-      nil
-    end
-
-    self.digital_origin = digital_origin
   end
 
 end
