@@ -1,4 +1,4 @@
-class MODSModel < ASpaceExport::ExportModel
+class AOMODSModel < ASpaceExport::ExportModel
   model_for :ao_mods
 
   include JSONModel
@@ -146,6 +146,11 @@ class MODSModel < ASpaceExport::ExportModel
                                   note['label'],
                                   content,
                                   'physicalDescription')
+                  when 'abstract'
+                    new_mods_note('abstract',
+                                  nil,
+                                  note['label'],
+                                  content)
                   else
                     new_mods_note('note',
                                   note['type'],
