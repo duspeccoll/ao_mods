@@ -30,9 +30,12 @@
             <%= render_aspace_partial :partial => "shared/event_dropdown", :locals => {:record => record} %>
           <% end %>
 
-          <%# BEGIN PLUGIN %>
-          <a href="<%= "#{AppConfig[:frontend_prefix]}plugins/ao_mods/#{params[:id]}/download"%>" class="btn btn-sm btn-default"><%= I18n.t("plugins.ao_exports.export_mods") %></a>
-          <%# END PLUGIN %>
+          <%# begin plugin %>
+          <%# only display the export_mods button if the archival object is an item record %>
+          <% if @archival_object.level == "item" %>
+            <a href="<%= "#{AppConfig[:frontend_prefix]}plugins/ao_mods/#{params[:id]}/download"%>" class="btn btn-sm btn-default"><%= I18n.t("plugins.ao_mods.export_mods") %></a>
+          <% end %>
+          <%# end plugin %>
 
           <% if suppressible && user_can?('suppress_archival_record') %>
             <div class="btn btn-inline-form">

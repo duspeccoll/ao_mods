@@ -39,6 +39,14 @@ class AOMODSSerializer < ASpaceExport::Serializer
       }
     }
 
+    # begin plugin
+    unless mods.digital_origin.empty?
+      xml.digitalOrigin {
+        xml.text mods.digital_origin
+      }
+    end
+    # end plugin
+
     unless mods.extents.empty?
       xml.physicalDescription {
         mods.extents.each do |extent|

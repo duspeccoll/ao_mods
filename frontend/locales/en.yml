@@ -1,4 +1,8 @@
 en:
   plugins:
-    ao_exports:
+    ao_mods:
       export_mods: Export MODS
+      digital_object:
+        digital_object: Digital Object
+        create: Create
+        update: Update
