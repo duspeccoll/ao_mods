@@ -1,0 +1,15 @@
+<%
+  digital_objects = record.instances.select{|i| i["instance_type"] == "digital_object"}
+%>
+
+<a href="<%= "#{AppConfig[:frontend_prefix]}plugins/ao_mods/#{params[:id]}/download"%>" class="btn btn-sm btn-default"><%= I18n.t("plugins.ao_mods.actions.export") %></a>
+
+<% if ['edit'].include?(controller.action_name) %>
+  <% if digital_objects.empty? %>
+    <a href="<%= "#{AppConfig[:frontend_prefix]}plugins/item_linker/#{params[:id]}/create"%>" class="btn btn-sm btn-default"><%= I18n.t("plugins.ao_mods.actions.create") %></a>
+  <% else %>
+    <% unless record.external_documents.select{|e| e["title"] == "Special Collections @ DU"}.empty? %>
+      <a href="<%= "#{AppConfig[:frontend_prefix]}plugins/item_linker/#{params[:id]}/update"%>" class="btn btn-sm btn-default"><%= I18n.t("plugins.ao_mods.actions.update") %></a>
+    <% end %>
+  <% end %>
+<% end %>
