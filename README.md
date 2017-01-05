@@ -21,9 +21,15 @@ The 'item_linker' branch allows users to create new digital objects and update i
 * **Create Digital Object** creates a new digital object using the item's title and component ID as the digital object's title and identifier, and will then link it to the item as its representative digital object.
 * **Update Digital Object** checks to see if the item has an External Document whose title is "Special Collections @ DU" (indicating a link to the repository); if the representative digital object's identifier does not match the location of that External Document, clicking the button will update the identifier to match the Islandora link.
 
+### Creating a new digital object from an item
+
 ![Create Digital Object screenshot](docs/create_digital_object.png)
 
+### Updating an existing digital object from an item
+
 ![Update Digital Object screenshot](docs/update_digital_object.png)
+
+### The finished product, with flash message indicating success
 
 ![Finished product](docs/flash_message.png)
 
