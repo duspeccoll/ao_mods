@@ -1,6 +1,5 @@
 class AoModsController < ExportsController
 
-  require 'csv'
   require 'zip'
   require 'net/http'
 
@@ -29,39 +28,30 @@ class AoModsController < ExportsController
   	return mods
 	end
 
-	def process_tree(obj, zos, log)
+	def process_tree(obj, zos, path)
 		url = "/repositories/#{session[:repo_id]}/archival_objects/mods/#{obj['id']}.xml"
-		filename = String.new
 		if obj['level'] == "item"
-			if obj['component_id']
-				filename = "#{obj['component_id']}.xml"
-			else
-				filename = "#{obj['id']}.xml"
-			end
+      filename = obj['component_id'] ? "#{obj['component_id']}.xml" : "#{obj['id']}.xml"
 			mods = get_mods(URI("#{JSONModel::HTTP.backend_url}#{url}"))
-			zos.put_next_entry filename
-			zos.print mods
-			log.push("#{filename} (#{url}) downloaded")
+      zos.put_next_entry "#{path}/#{filename}"
+      zos.puts mods
 		end
 		obj['children'].each do |child|
-			process_tree(child, zos, log)
+			process_tree(child, zos, path)
 		end
 	end
 
 	def batch_download(resource)
+    id = JSONModel::HTTP.get_json("#{resource}")['id_0'].downcase!
     tree = JSONModel::HTTP.get_json("#{resource}/tree")
-		log = Array.new
-		output = Zip::OutputStream.write_buffer do |zos|
+    path = "#{id}_mods_download"
+    output = Zip::OutputStream.write_buffer do |zos|
 			tree['children'].each do |child|
-				process_tree(child, zos, log)
-			end
-			zos.put_next_entry "action_log.txt"
-			log.each do |entry|
-				zos.puts entry
+				process_tree(child, zos, path)
 			end
 		end
 		output.rewind
-    send_data output.read, filename: "mods_download.zip"
+    send_data output.read, :filename => "#{path}.zip", :type => "application/zip"
 	end
 
 end
