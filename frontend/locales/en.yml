@@ -1,7 +1,11 @@
 en:
   plugins:
     ao_mods:
-     actions:
+      label: MODS Download
+      title: MODS Download
+      description: Downloads all MODS representations of items associated with the resource selected.
+      actions:
         create: Create Digital Object
+        download: Download
         export: Export MODS
         update: Update Digital Object
