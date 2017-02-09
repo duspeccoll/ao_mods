@@ -1,4 +1,9 @@
 en:
   plugins:
     ao_mods:
-      export_mods: Export MODS
+      label: MODS Download
+      title: MODS Batch Download
+      description: Downloads all MODS representations of items associated with the resource selected.
+      actions:
+        download: Download
+        export_mods: Export MODS

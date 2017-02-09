@@ -33,7 +33,7 @@
           <%# begin plugin %>
           <%# only display the export_mods button if the archival object is an item record %>
           <% if record.level == "item" %>
-            <a href="<%= "#{AppConfig[:frontend_prefix]}plugins/ao_mods/#{params[:id]}/download"%>" class="btn btn-sm btn-default"><%= I18n.t("plugins.ao_mods.export_mods") %></a>
+            <a href="<%= "#{AppConfig[:frontend_prefix]}plugins/ao_mods/#{params[:id]}/download"%>" class="btn btn-sm btn-default"><%= I18n.t("plugins.ao_mods.actions.export_mods") %></a>
           <% end %>
           <%# end plugin %>
 

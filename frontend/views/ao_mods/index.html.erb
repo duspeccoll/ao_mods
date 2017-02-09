@@ -1,0 +1,22 @@
+<%= setup_context :title => I18n.t("plugins.ao_mods.title") %>
+
+<%= render_aspace_partial :partial => "form" %>
+
+<link rel="stylesheet" type="text/css" media="all" href="<%= "#{AppConfig[:frontend_prefix]}assets/styles/ao_mods.css" %>"></link>
+
+<!-- force initialize the linker -->
+<script>
+  function ModsDownload($download_form) {
+    this.$download_form = $download_form;
+    this.setup_form();
+  }
+
+  ModsDownload.prototype.setup_form = function() {
+    var self = this;
+    $(document).trigger("loadedrecordsubforms.aspace", this.$download_form);
+  }
+
+  $(function() {
+    var modsDownload = new ModsDownload($("#mods_download_form"));
+  });
+</script>
