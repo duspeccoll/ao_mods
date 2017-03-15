@@ -3,7 +3,7 @@ en:
     ao_mods:
       label: MODS Download
       title: MODS Download
-      description: Downloads all MODS representations of items associated with the resource selected.
+      instructions: Enter the IDs of the items for which you wish to download MODS (one per row).
       actions:
         create: Create Digital Object
         download: Download
