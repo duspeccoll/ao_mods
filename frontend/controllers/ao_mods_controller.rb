@@ -22,11 +22,8 @@ class AoModsController < ExportsController
 
   def get_mods(uri)
     url = URI("#{JSONModel::HTTP.backend_url}#{uri}")
-    req = Net::HTTP::Get.new(url.request_uri)
-    req['X-ArchivesSpace-Session'] = Thread.current[:backend_session]
-    resp = Net::HTTP.start(url.host, url.port) { |http| http.request(req) }
-    mods = resp.body if resp.code == "200"
-  	return mods
+    response = JSONModel::HTTP::get_response(url)
+    return response.body if response.code == "200"
 	end
 
   def search_item(item)
@@ -43,7 +40,7 @@ class AoModsController < ExportsController
     end
   end
 
-	def batch_download(downloads)
+  def batch_download(downloads)
     items = downloads.split(/\r\n/)
     uris = []
 
@@ -67,6 +64,6 @@ class AoModsController < ExportsController
       output.rewind
       send_data output.read, :filename => "batch_mods_download.zip", :type => "application/zip"
     end
-	end
+  end
 
 end
