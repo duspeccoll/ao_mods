@@ -25,9 +25,12 @@ class ItemLinkerController < ApplicationController
     # 4. Throw the error if the item/digital object link is unsuccessful
     # 5. Return the user to the item record
 
+    links = item['external_documents'].select{|e| e["title"] == "Special Collections @ DU"}
+    digital_object_id = links.empty? ? item['component_id'] : links[0]['location']
+
     object = JSONModel(:digital_object).new({
       :title => item['title'],
-      :digital_object_id => item['component_id'],
+      :digital_object_id => digital_object_id,
       :publish => true
     }).to_json
 
@@ -61,18 +64,18 @@ class ItemLinkerController < ApplicationController
     # 3. If not, copy the Special Collections @ DU link to the digital object
     # 4. Return the user to the item record
 
-    handles = item['external_documents'].select{|e| e["title"] == "Special Collections @ DU"}
-    handle = handles[0]['location']
+    links = item['external_documents'].select{|e| e["title"] == "Special Collections @ DU"}
+    link = links[0]['location']
 
     digital_objects = item['instances'].select{|i| i["instance_type"] == "digital_object"}
     digital_object = digital_objects[0]['digital_object']['ref']
 
     object = JSONModel::HTTP.get_json(digital_object)
 
-    if handle == object['digital_object_id']
+    if link == object['digital_object_id']
       flash[:info] = "The handles already match; no action taken"
     else
-      object['digital_object_id'] = handle
+      object['digital_object_id'] = link
       res = JSONModel::HTTP::post_json(URI("#{JSONModel::HTTP.backend_url}#{digital_object}"), object.to_json)
       if res.code === "200"
         flash[:success] = "Digital object updated: #{digital_object}"
