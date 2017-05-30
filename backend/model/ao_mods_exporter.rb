@@ -14,8 +14,12 @@ class AOMODSSerializer < ASpaceExport::Serializer
 
   def serialize_mods(mods, xml)
 
-    root_args = {'version' => '3.4'}
-    root_args['xmlns'] = 'http://www.loc.gov/mods/v3'
+    root_args = {
+      'version' => '3.4',
+      'xmlns' => "http://www.loc.gov/mods/v3",
+      'xmlns:xlink' => "http://www.w3.org/1999/xlink",
+      'xmlns:xsi' => "http://www.w3.org/2001/XMLSchema-instance"
+    }
 
     xml.mods(root_args){
       serialize_mods_inner(mods, xml)
