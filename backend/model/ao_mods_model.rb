@@ -7,26 +7,25 @@ class AOMODSModel < ASpaceExport::ExportModel
   attr_accessor :language_term
   attr_accessor :extents
   attr_accessor :notes
+  attr_accessor :extent_notes
   attr_accessor :subjects
   attr_accessor :names
   attr_accessor :type_of_resource
   attr_accessor :repository_note
-
-  # begin plugin
+  attr_accessor :dates
   attr_accessor :local_identifier
   attr_accessor :digital_origin
-  # end plugin
 
   @archival_object_map = {
-    :language => :language_term=,
-    :extents => :handle_extent,
+    [:title, :dates] => :handle_title,
+    :language => :handle_language,
+    [:extents, :notes] => :handle_extents,
     :subjects => :handle_subjects,
     :linked_agents => :handle_agents,
     :notes => :handle_notes,
-    # begin plugin
     :component_id => :local_identifier=,
+    :dates => :handle_dates,
     :instances => :handle_instances
-    # end plugin
   }
 
   @name_type_map = {
@@ -56,22 +55,18 @@ class AOMODSModel < ASpaceExport::ExportModel
   def initialize
     @extents = []
     @notes = []
+    @extent_notes = []
     @subjects = []
     @names = []
     @parts = []
-    # begin plugin
+    @dates = []
     @digital_origin = ""
-    # end plugin
   end
 
   # meaning, 'archival object' in the abstract
   def self.from_archival_object(obj)
 
     mods = self.new
-
-    # taking a stab at including date expression in titleInfo/title
-    mods.title = build_title(obj)
-
     mods.apply_map(obj, @archival_object_map)
 
     mods
@@ -96,25 +91,27 @@ class AOMODSModel < ASpaceExport::ExportModel
     @@mods_note.new(*a)
   end
 
-  def self.build_title(obj)
-    mods_title = obj.title
-
-    obj.dates.each do |date|
-      if date['label'] == "creation"
-        mods_title << ", #{date['expression']}"
-      end
-    end
-
-    mods_title
-  end
-
   def new_mods_note(*a)
     self.class.new_mods_note(*a)
   end
 
 
+  def handle_title(title, dates)
+    t = title
+    dates.each do |date|
+      if date['label'] == "creation"
+        t << ", #{date['expression']}"
+      end
+    end
+
+    self.title = t
+  end
+
+
   def handle_notes(notes)
     notes.each do |note|
+      # physdesc and dimensions are treated separately from other notes
+      next if note['type'] == 'physdesc' || note['type'] == 'dimensions'
       content = ASpaceExport::Utils.extract_note_text(note)
       mods_note = case note['type']
                   when 'accessrestrict'
@@ -132,12 +129,6 @@ class AOMODSModel < ASpaceExport::ExportModel
                                   note['type'],
                                   note['label'],
                                   content)
-                  when 'physdesc'
-                    new_mods_note('note',
-                                  nil,
-                                  note['label'],
-                                  content,
-                                  'physicalDescription')
                   when 'abstract'
                     new_mods_note('abstract',
                                   nil,
@@ -153,28 +144,72 @@ class AOMODSModel < ASpaceExport::ExportModel
     end
   end
 
+  # notes relating to extents are treated differently than other notes
+  # when the model is serialized.
+  def handle_extents_notes(notes)
+    notes.each do |note|
+      next unless note['type'] == 'physdesc' || note['type'] == 'dimensions'
+      next unless note['publish'] == true
 
-  def handle_extent(extents)
+      content = ASpaceExport::Utils.extract_note_text(note)
+      mods_note = case note['type']
+                  when 'physdesc'
+                    new_mods_note('note',
+                                  'physical_description',
+                                  "Physical Details",
+                                  content)
+                  when 'dimensions'
+                    new_mods_note('note',
+                                  'dimensions',
+                                  "Dimensions",
+                                  content)
+                  end
+      self.extent_notes << mods_note
+    end
+  end
+
+
+  def handle_extents(extents, notes)
     extents.each do |ext|
       e = ext['number']
       e << " (#{ext['portion']})" if ext['portion']
       e << " #{ext['extent_type']}"
 
       self.extents << e
+
+      # the extents hash may have data under keys 'physical_details' and 'dimensions'.
+      # If found, we'll treat them as if they were notes of that type.
+      if ext.has_key?('physical_details') && !ext['physical_details'].nil?
+        extent_notes << new_mods_note('note', 'physical_description', "Physical Details", ext['physical_details'])
+      end
+
+      if ext.has_key?('dimensions') && !ext['dimensions'].nil?
+        extent_notes << new_mods_note('note', 'dimensions', "Dimensions", ext['dimensions'])
+      end
     end
+
+    # process any physical_details and dimension notes that may be in the note list.
+    handle_extents_notes(notes)
   end
 
 
   def handle_subjects(subjects)
     subjects.map {|s| s['_resolved'] }.each do |subject|
+      terms = []
+      subject['terms'].each do |t|
+        term = {'term' => t['term'], 'type' => t['term_type']}
+        terms.push term
+      end
+
       self.subjects << {
-        'terms' => subject['terms'].map {|t| t['term']},
+        'terms' => terms,
         'source' => subject['source']
       }
     end
   end
 
-  # begin plugin
+
+  # add user defined digital origin to the physicalDescription wrapper
   def handle_instances(instances)
     instances.map { |i| i['digital_object']['_resolved'] }.each do |object|
       if object['user_defined']
@@ -184,7 +219,7 @@ class AOMODSModel < ASpaceExport::ExportModel
       end
     end
   end
-  # end plugin
+
 
   def handle_agents(linked_agents)
     linked_agents.each do |link|
@@ -203,6 +238,23 @@ class AOMODSModel < ASpaceExport::ExportModel
       end
     end
   end
+
+
+  def handle_dates(dates)
+    dates.each do |date|
+      self.dates.push date
+    end
+  end
+
+
+  def handle_language(language_term)
+    unless language_term.nil? || language_term.empty?
+      self.language_term = I18n.t("enumerations.language_iso639_2." + language_term) + ":" + language_term
+    else
+      self.language_term = nil
+    end
+  end
+
 
   def name_parts(name, type)
     fields = case type
