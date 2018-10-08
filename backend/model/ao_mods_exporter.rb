@@ -113,7 +113,6 @@ class AOMODSSerializer < ASpaceExport::Serializer
     end
 
     mods.names.each do |name|
-
       case name['role']
       when 'subject'
         xml.subject {
@@ -122,6 +121,13 @@ class AOMODSSerializer < ASpaceExport::Serializer
       else
         serialize_name(name, xml)
       end
+    end
+
+    mods.parts.each do |part|
+      xml.part(:type => part['type'], :order => part['order']) {
+        xml.title part['name']
+        xml.caption part['caption']
+      }
     end
 
   end

@@ -15,6 +15,7 @@ class AOMODSModel < ASpaceExport::ExportModel
   attr_accessor :dates
   attr_accessor :local_identifier
   attr_accessor :digital_origin
+  attr_accessor :parts
 
   @archival_object_map = {
     [:title, :dates] => :handle_title,
@@ -50,6 +51,19 @@ class AOMODSModel < ASpaceExport::ExportModel
     'digitized_other' => "digitized other analog",
     'reformatted' => "reformatted digital"
   }
+
+  @mime_type_map = {
+    'aiff' => "audio/x-aiff",
+    'avi' => "video/x-msvideo",
+    'gif' => "image/gif",
+    'jpeg' => "image/jpeg",
+    'mov' => "video/quicktime",
+    'mp3' => "audio/mp3",
+    'pdf' => "application/pdf",
+    'tiff' => "image/tiff",
+    'txt' => "text/plain",
+    'wav' => "audio/x-wav"
+  }
   # end plugin
 
   def initialize
@@ -59,6 +73,7 @@ class AOMODSModel < ASpaceExport::ExportModel
     @subjects = []
     @names = []
     @parts = []
+    @name_parts = []
     @dates = []
     @digital_origin = ""
   end
@@ -83,6 +98,10 @@ class AOMODSModel < ASpaceExport::ExportModel
   # begin plugin
   def self.digital_origin_map
     @digital_origin_map
+  end
+
+  def self.mime_type_map
+    @mime_type_map
   end
   # end plugin
 
@@ -209,12 +228,24 @@ class AOMODSModel < ASpaceExport::ExportModel
   end
 
 
-  # add user defined digital origin to the physicalDescription wrapper
+  # add digital origin and <parts> to the physicalDescription wrapper if a
+  # digital object is linked to the item record
   def handle_instances(instances)
     instances.map { |i| i['digital_object']['_resolved'] }.each do |object|
       if object['user_defined']
         unless object['user_defined']['enum_2'].nil?
           self.digital_origin = self.class.digital_origin_map[object['user_defined']['enum_2']] if digital_origin.empty?
+        end
+      end
+
+      if object['file_versions'].length > 1
+        object['file_versions'].each_with_index do |part, idx|
+          self.parts << {
+            'type' => self.class.mime_type_map[part['file_format_name']],
+            'order' => (idx+1).to_s,
+            'name' => part['file_uri'],
+            'caption' => part['caption']
+          }
         end
       end
     end
@@ -232,7 +263,7 @@ class AOMODSModel < ASpaceExport::ExportModel
           'type' => name_type,
           'role' => role,
           'source' => name['source'],
-          'parts' => name_parts(name, agent['jsonmodel_type']),
+          'parts' => get_name_parts(name, agent['jsonmodel_type']),
           'displayForm' => name['sort_name']
         }
       end
@@ -256,7 +287,7 @@ class AOMODSModel < ASpaceExport::ExportModel
   end
 
 
-  def name_parts(name, type)
+  def get_name_parts(name, type)
     fields = case type
              when 'agent_person'
                ["primary_name", "title", "prefix", "rest_of_name", "suffix", "fuller_form", "number"]
@@ -267,15 +298,15 @@ class AOMODSModel < ASpaceExport::ExportModel
              when 'agent_corporate_entity'
                ["primary_name", "subordinate_name_1", "subordinate_name_2", "number"]
              end
-    parts = []
+    name_parts = []
     fields.each do |field|
-      part = {}
-      part['type'] = self.class.name_part_type_map[field]
-      part.delete('type') if part['type'].nil?
-      part['content'] = name[field] unless name[field].nil?
-      parts << part unless part.empty?
+      name_part = {}
+      name_part['type'] = self.class.name_part_type_map[field]
+      name_part.delete('type') if name_part['type'].nil?
+      name_part['content'] = name[field] unless name[field].nil?
+      name_parts << name_part unless name_part.empty?
     end
-    parts
+    name_parts
   end
 
 end
