@@ -231,7 +231,8 @@ class AOMODSModel < ASpaceExport::ExportModel
   # add digital origin and <parts> to the physicalDescription wrapper if a
   # digital object is linked to the item record
   def handle_instances(instances)
-    instances.map { |i| i['digital_object']['_resolved'] }.each do |object|
+    daos = instances.select{|i| i[:instance_type] == "digital_object"}
+    daos.map{|dao| dao['digital_object']['_resolved']}.each do |object|
       if object['user_defined']
         unless object['user_defined']['enum_2'].nil?
           self.digital_origin = self.class.digital_origin_map[object['user_defined']['enum_2']] if digital_origin.empty?
